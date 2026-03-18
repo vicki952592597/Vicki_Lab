@@ -1277,22 +1277,48 @@ function applyPickerColor() {
   colorRgbEl.textContent = `R ${rgb[0]}  G ${rgb[1]}  B ${rgb[2]}`;
   wheelToggle.style.boxShadow = `0 2px 12px rgba(0,0,0,.4), 0 0 14px ${hex}44`;
 
-  // 应用到当前材质
-  if (!currentMaterial) return;
+  // 应用到当前材质 (Vol.1 TorusKnot)
   const c = new THREE.Color(hex);
-  if (currentMaterial.uniforms) {
-    // Fresnel ShaderMaterial
-    if (currentMaterial.uniforms.uColor) currentMaterial.uniforms.uColor.value.copy(c);
-    if (currentMaterial.uniforms.uColor2) currentMaterial.uniforms.uColor2.value.copy(new THREE.Color().setHSL(pickerH + 0.15, pickerS, pickerL));
-  } else if (currentMaterial.emissive) {
-    // Bloom emissive
-    currentMaterial.emissive.copy(c);
-  } else if (currentMaterial.color) {
-    currentMaterial.color.copy(c);
+  if (currentMaterial) {
+    if (currentMaterial.uniforms) {
+      if (currentMaterial.uniforms.uColor) currentMaterial.uniforms.uColor.value.copy(c);
+      if (currentMaterial.uniforms.uColor2) currentMaterial.uniforms.uColor2.value.copy(new THREE.Color().setHSL(pickerH + 0.15, pickerS, pickerL));
+    } else if (currentMaterial.emissive) {
+      currentMaterial.emissive.copy(c);
+    } else if (currentMaterial.color) {
+      currentMaterial.color.copy(c);
+    }
   }
   // Metaball
   if (isMetaballMode && metaballBalls.length > 0) {
     metaballBalls.forEach(b => { if (b.material && b.material.color) b.material.color.copy(c); });
+  }
+  // Vol.2 扩展场景对象
+  if (extraObjects.length > 0) {
+    extraObjects.forEach(obj => {
+      if (!obj.material) return;
+      const mat = obj.material;
+      // ShaderMaterial — 更新 uColor uniform
+      if (mat.uniforms) {
+        if (mat.uniforms.uColor) mat.uniforms.uColor.value.copy(c);
+        return;
+      }
+      // 跳过背景装饰球（emissiveIntensity 较低的小球保持原色更好看）
+      if (obj.geometry && obj.geometry.parameters && obj.geometry.parameters.radius && obj.geometry.parameters.radius < 0.3) return;
+      // emissive 材质
+      if (mat.emissive && mat.emissiveIntensity > 0.5) {
+        mat.emissive.copy(c);
+      }
+      // 普通 color
+      if (mat.color && !mat.transmission) {
+        mat.color.copy(c);
+      }
+      // 透射材质 — 修改衰减色
+      if (mat.transmission && mat.transmission > 0.5 && mat.attenuationColor) {
+        mat.attenuationColor.copy(c);
+      }
+      mat.needsUpdate = true;
+    });
   }
   currentMaterial.needsUpdate = true;
 }
