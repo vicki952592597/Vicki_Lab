@@ -129,6 +129,32 @@ body::after{content:'';position:fixed;inset:0;z-index:0;opacity:.35;pointer-even
 #preview-label{position:absolute;bottom:16px;left:16px;z-index:2;font-size:10px;color:var(--text3);background:rgba(0,0,0,.5);backdrop-filter:blur(8px);padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.05);pointer-events:none;letter-spacing:.5px;font-weight:500}
 #preview-note{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;font-size:12px;color:var(--text2);text-align:center;pointer-events:none;display:none;background:rgba(0,0,0,.6);backdrop-filter:blur(12px);padding:12px 24px;border-radius:10px;border:1px solid rgba(255,255,255,.06);letter-spacing:.3px;font-weight:500}
 
+/* ===== 色轮面板 ===== */
+#color-wheel-panel{position:absolute;top:14px;right:14px;z-index:10;display:flex;flex-direction:column;align-items:center;gap:10px}
+#color-wheel-toggle{width:36px;height:36px;border-radius:10px;border:2px solid rgba(255,255,255,.12);cursor:pointer;background:conic-gradient(red,#ff0,#0f0,#0ff,#00f,#f0f,red);box-shadow:0 2px 12px rgba(0,0,0,.4);transition:all .25s;position:relative;overflow:hidden}
+#color-wheel-toggle::after{content:'';position:absolute;inset:30%;border-radius:50%;background:var(--bg);border:1.5px solid rgba(255,255,255,.15)}
+#color-wheel-toggle:hover{transform:scale(1.08);box-shadow:0 2px 20px rgba(0,212,255,.2);border-color:rgba(255,255,255,.25)}
+#color-wheel-dropdown{display:none;flex-direction:column;align-items:center;gap:12px;padding:16px;background:rgba(14,14,18,.92);backdrop-filter:blur(20px) saturate(1.3);-webkit-backdrop-filter:blur(20px) saturate(1.3);border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04) inset}
+#color-wheel-dropdown.open{display:flex}
+#color-wheel-dropdown::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.2),rgba(124,92,252,.2),transparent)}
+
+/* 色轮 Canvas */
+#wheel-canvas{width:160px;height:160px;border-radius:50%;cursor:crosshair;box-shadow:0 0 0 2px rgba(255,255,255,.06)}
+#wheel-cursor{position:absolute;width:14px;height:14px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.5),inset 0 0 0 1px rgba(0,0,0,.2);pointer-events:none;transform:translate(-50%,-50%);transition:none}
+
+/* 亮度条 */
+#lightness-bar-wrap{width:160px;height:18px;border-radius:9px;position:relative;cursor:pointer;border:1px solid rgba(255,255,255,.08);overflow:hidden}
+#lightness-bar{width:100%;height:100%;border-radius:9px}
+#lightness-handle{position:absolute;top:50%;width:10px;height:16px;border-radius:4px;border:2px solid #fff;box-shadow:0 0 6px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,-50%)}
+
+/* 颜色信息 */
+#color-info{display:flex;align-items:center;gap:10px;width:100%}
+#color-preview-swatch{width:32px;height:32px;border-radius:8px;border:2px solid rgba(255,255,255,.1);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#color-hex{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--text);letter-spacing:.5px;flex:1}
+#color-rgb{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.3px}
+#color-reset-btn{padding:4px 10px;border:1px solid rgba(255,255,255,.08);border-radius:6px;background:rgba(255,255,255,.04);color:var(--text3);font-size:10px;font-family:'Inter',sans-serif;cursor:pointer;transition:all .2s}
+#color-reset-btn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+
 /* ===== 响应式 ===== */
 @media(max-width:1100px){
   #prompt-panel{width:280px;min-width:280px}
@@ -171,6 +197,24 @@ body::after{content:'';position:fixed;inset:0;z-index:0;opacity:.35;pointer-even
     <div id="preview-container">
       <div id="preview-label">拖拽旋转 · 滚轮缩放</div>
       <div id="preview-note"></div>
+      <div id="color-wheel-panel">
+        <div id="color-wheel-toggle" title="材质颜色"></div>
+        <div id="color-wheel-dropdown">
+          <div style="position:relative">
+            <canvas id="wheel-canvas" width="320" height="320"></canvas>
+            <div id="wheel-cursor"></div>
+          </div>
+          <div id="lightness-bar-wrap">
+            <canvas id="lightness-bar" width="320" height="36"></canvas>
+            <div id="lightness-handle" style="left:50%"></div>
+          </div>
+          <div id="color-info">
+            <div id="color-preview-swatch" style="background:#888"></div>
+            <div><div id="color-hex">#888888</div><div id="color-rgb">R 136  G 136  B 136</div></div>
+            <button id="color-reset-btn">重置</button>
+          </div>
+        </div>
+      </div>
     </div>
   </main>
   <aside id="prompt-panel">
@@ -746,7 +790,202 @@ const resizeObserver = new ResizeObserver(() => {
 resizeObserver.observe(container);
 
 /* ============================================================
-   八、自动选中第一个
+   八、色轮拾色器
+   ============================================================ */
+const wheelToggle = document.getElementById('color-wheel-toggle');
+const wheelDropdown = document.getElementById('color-wheel-dropdown');
+const wheelCanvas = document.getElementById('wheel-canvas');
+const wheelCtx = wheelCanvas.getContext('2d');
+const wheelCursor = document.getElementById('wheel-cursor');
+const lBarWrap = document.getElementById('lightness-bar-wrap');
+const lBarCanvas = document.getElementById('lightness-bar');
+const lBarCtx = lBarCanvas.getContext('2d');
+const lHandle = document.getElementById('lightness-handle');
+const colorSwatch = document.getElementById('color-preview-swatch');
+const colorHexEl = document.getElementById('color-hex');
+const colorRgbEl = document.getElementById('color-rgb');
+const colorResetBtn = document.getElementById('color-reset-btn');
+
+let pickerH = 0, pickerS = 1, pickerL = 0.5;
+let wheelDragging = false, lBarDragging = false;
+
+// 绘制色轮
+function drawWheel() {
+  const w = wheelCanvas.width, h = wheelCanvas.height;
+  const cx = w / 2, cy = h / 2, r = cx - 2;
+  const img = wheelCtx.createImageData(w, h);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const dx = x - cx, dy = y - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const idx = (y * w + x) * 4;
+      if (dist <= r) {
+        const angle = Math.atan2(dy, dx);
+        const hue = ((angle * 180 / Math.PI) + 360) % 360;
+        const sat = dist / r;
+        const rgb = hslToRgb(hue / 360, sat, pickerL);
+        img.data[idx] = rgb[0]; img.data[idx+1] = rgb[1]; img.data[idx+2] = rgb[2]; img.data[idx+3] = 255;
+      } else if (dist <= r + 2) {
+        img.data[idx] = 40; img.data[idx+1] = 40; img.data[idx+2] = 45; img.data[idx+3] = 255;
+      } else {
+        img.data[idx+3] = 0;
+      }
+    }
+  }
+  wheelCtx.putImageData(img, 0, 0);
+}
+
+// 绘制亮度条
+function drawLightnessBar() {
+  const w = lBarCanvas.width, h = lBarCanvas.height;
+  const grad = lBarCtx.createLinearGradient(0, 0, w, 0);
+  grad.addColorStop(0, `hsl(${pickerH * 360},${pickerS * 100}%,0%)`);
+  grad.addColorStop(0.5, `hsl(${pickerH * 360},${pickerS * 100}%,50%)`);
+  grad.addColorStop(1, `hsl(${pickerH * 360},${pickerS * 100}%,100%)`);
+  lBarCtx.fillStyle = grad;
+  lBarCtx.fillRect(0, 0, w, h);
+}
+
+// HSL → RGB
+function hslToRgb(h, s, l) {
+  let r, g, b;
+  if (s === 0) { r = g = b = l; }
+  else {
+    const hue2rgb = (p, q, t) => { if(t<0)t+=1; if(t>1)t-=1; if(t<1/6)return p+(q-p)*6*t; if(t<1/2)return q; if(t<2/3)return p+(q-p)*(2/3-t)*6; return p; };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+// 更新 UI + 材质颜色
+function applyPickerColor() {
+  const rgb = hslToRgb(pickerH, pickerS, pickerL);
+  const hex = rgbToHex(rgb[0], rgb[1], rgb[2]);
+  colorSwatch.style.background = hex;
+  colorHexEl.textContent = hex.toUpperCase();
+  colorRgbEl.textContent = `R ${rgb[0]}  G ${rgb[1]}  B ${rgb[2]}`;
+  wheelToggle.style.boxShadow = `0 2px 12px rgba(0,0,0,.4), 0 0 14px ${hex}44`;
+
+  // 应用到当前材质
+  if (!currentMaterial) return;
+  const c = new THREE.Color(hex);
+  if (currentMaterial.uniforms) {
+    // Fresnel ShaderMaterial
+    if (currentMaterial.uniforms.uColor) currentMaterial.uniforms.uColor.value.copy(c);
+    if (currentMaterial.uniforms.uColor2) currentMaterial.uniforms.uColor2.value.copy(new THREE.Color().setHSL(pickerH + 0.15, pickerS, pickerL));
+  } else if (currentMaterial.emissive) {
+    // Bloom emissive
+    currentMaterial.emissive.copy(c);
+  } else if (currentMaterial.color) {
+    currentMaterial.color.copy(c);
+  }
+  // Metaball
+  if (isMetaballMode && metaballBalls.length > 0) {
+    metaballBalls.forEach(b => { if (b.material && b.material.color) b.material.color.copy(c); });
+  }
+  currentMaterial.needsUpdate = true;
+}
+
+// 色轮交互
+function wheelPick(e) {
+  const rect = wheelCanvas.getBoundingClientRect();
+  const scaleX = wheelCanvas.width / rect.width;
+  const scaleY = wheelCanvas.height / rect.height;
+  const cx = wheelCanvas.width / 2, cy = wheelCanvas.height / 2;
+  const x = (e.clientX - rect.left) * scaleX - cx;
+  const y = (e.clientY - rect.top) * scaleY - cy;
+  const r = cx - 2;
+  const dist = Math.min(Math.sqrt(x * x + y * y), r);
+  const angle = Math.atan2(y, x);
+  pickerH = ((angle * 180 / Math.PI) + 360) % 360 / 360;
+  pickerS = dist / r;
+  // 移动光标
+  const dispR = rect.width / 2;
+  const cursorDist = (dist / r) * dispR;
+  const cursorX = dispR + Math.cos(angle) * cursorDist;
+  const cursorY = dispR + Math.sin(angle) * cursorDist;
+  wheelCursor.style.left = cursorX + 'px';
+  wheelCursor.style.top = cursorY + 'px';
+  drawLightnessBar();
+  applyPickerColor();
+}
+
+wheelCanvas.addEventListener('mousedown', e => { wheelDragging = true; wheelPick(e); });
+window.addEventListener('mousemove', e => { if (wheelDragging) wheelPick(e); });
+window.addEventListener('mouseup', () => { wheelDragging = false; });
+wheelCanvas.addEventListener('touchstart', e => { e.preventDefault(); wheelDragging = true; wheelPick(e.touches[0]); }, { passive: false });
+window.addEventListener('touchmove', e => { if (wheelDragging) wheelPick(e.touches[0]); });
+window.addEventListener('touchend', () => { wheelDragging = false; });
+
+// 亮度条交互
+function lBarPick(e) {
+  const rect = lBarWrap.getBoundingClientRect();
+  const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+  pickerL = x / rect.width;
+  lHandle.style.left = (pickerL * 100) + '%';
+  drawWheel();
+  applyPickerColor();
+}
+
+lBarWrap.addEventListener('mousedown', e => { lBarDragging = true; lBarPick(e); });
+window.addEventListener('mousemove', e => { if (lBarDragging) lBarPick(e); });
+window.addEventListener('mouseup', () => { lBarDragging = false; });
+lBarWrap.addEventListener('touchstart', e => { e.preventDefault(); lBarDragging = true; lBarPick(e.touches[0]); }, { passive: false });
+window.addEventListener('touchmove', e => { if (lBarDragging) lBarPick(e.touches[0]); });
+window.addEventListener('touchend', () => { lBarDragging = false; });
+
+// 切换面板
+wheelToggle.addEventListener('click', () => {
+  wheelDropdown.classList.toggle('open');
+  if (wheelDropdown.classList.contains('open')) {
+    drawWheel();
+    drawLightnessBar();
+  }
+});
+
+// 重置
+colorResetBtn.addEventListener('click', () => {
+  if (currentIdx >= 0) {
+    const item = DATA[currentIdx];
+    switchScene(item.id);
+    pickerH = 0; pickerS = 0; pickerL = 0.53;
+    lHandle.style.left = '53%';
+    wheelCursor.style.left = '80px';
+    wheelCursor.style.top = '80px';
+    drawWheel();
+    drawLightnessBar();
+    const rgb = hslToRgb(pickerH, pickerS, pickerL);
+    const hex = rgbToHex(rgb[0], rgb[1], rgb[2]);
+    colorSwatch.style.background = hex;
+    colorHexEl.textContent = hex.toUpperCase();
+    colorRgbEl.textContent = `R ${rgb[0]}  G ${rgb[1]}  B ${rgb[2]}`;
+    wheelToggle.style.boxShadow = '0 2px 12px rgba(0,0,0,.4)';
+  }
+});
+
+// 点击外部关闭
+document.addEventListener('click', e => {
+  if (!document.getElementById('color-wheel-panel').contains(e.target)) {
+    wheelDropdown.classList.remove('open');
+  }
+});
+
+// 初始绘制
+drawWheel();
+drawLightnessBar();
+wheelCursor.style.left = '80px';
+wheelCursor.style.top = '80px';
+
+/* ============================================================
+   九、自动选中第一个
    ============================================================ */
 selectItem(0);
 
