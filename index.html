@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D 视觉资产与动效词典</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#09090b;--surface:rgba(18,18,22,.85);--surface2:rgba(30,30,38,.6);--border:rgba(255,255,255,.06);
+  --text:#f0f0f5;--text2:rgba(255,255,255,.45);--text3:rgba(255,255,255,.28);
+  --accent:#00d4ff;--accent2:#7c5cfc;--accent3:#34d399;--accent4:#fb923c;
+  --glow:rgba(0,212,255,.15);--glow2:rgba(124,92,252,.12);
+}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* ===== 全局背景纹理 ===== */
+body::before{content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 10%,rgba(0,212,255,.06),transparent),
+    radial-gradient(ellipse 60% 50% at 20% 80%,rgba(124,92,252,.05),transparent),
+    radial-gradient(ellipse 50% 40% at 90% 90%,rgba(52,211,153,.03),transparent);
+  pointer-events:none}
+body::after{content:'';position:fixed;inset:0;z-index:0;opacity:.35;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);
+  background-size:60px 60px}
+
+#app{display:flex;height:100vh;position:relative;z-index:1}
+
+/* ===== 左侧边栏 — 玻璃拟态 ===== */
+#sidebar{width:300px;min-width:300px;background:var(--surface);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:relative}
+#sidebar::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:linear-gradient(180deg,transparent,rgba(0,212,255,.2) 30%,rgba(124,92,252,.2) 70%,transparent);pointer-events:none}
+
+#sidebar-header{padding:28px 24px 20px;border-bottom:1px solid var(--border);position:relative}
+#sidebar-header::before{content:'';position:absolute;bottom:0;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.3),rgba(124,92,252,.3),transparent)}
+#sidebar-header h1{font-size:15px;font-weight:700;letter-spacing:.5px;color:var(--text);display:flex;align-items:center;gap:10px}
+#sidebar-header h1::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent),0 0 4px var(--accent);animation:pulse-dot 2s ease-in-out infinite}
+#sidebar-header p{font-size:10px;color:var(--text3);margin-top:6px;letter-spacing:2px;text-transform:uppercase;padding-left:18px}
+
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.8)}}
+
+#nav-list{list-style:none;flex:1;overflow-y:auto;padding:10px 8px}
+#nav-list::-webkit-scrollbar{width:3px}
+#nav-list::-webkit-scrollbar-track{background:transparent}
+#nav-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:3px}
+#nav-list::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.15)}
+
+.nav-item{padding:14px 16px;border-radius:12px;cursor:pointer;margin-bottom:4px;transition:all .25s cubic-bezier(.4,0,.2,1);border:1px solid transparent;position:relative;overflow:hidden}
+.nav-item::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:0;border-radius:0 3px 3px 0;background:linear-gradient(180deg,var(--accent),var(--accent2));transition:height .25s cubic-bezier(.4,0,.2,1)}
+.nav-item:hover{background:var(--surface2);border-color:rgba(255,255,255,.04)}
+.nav-item:hover::before{height:24px}
+.nav-item.active{background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(124,92,252,.08));border-color:rgba(0,212,255,.15);box-shadow:0 0 20px rgba(0,212,255,.06),inset 0 0 20px rgba(0,212,255,.03)}
+.nav-item.active::before{height:32px}
+.nav-item.active::after{content:'';position:absolute;inset:0;border-radius:12px;background:linear-gradient(135deg,rgba(0,212,255,.04),transparent 60%);pointer-events:none}
+.nav-item .en{font-size:13px;font-weight:600;color:rgba(255,255,255,.85);letter-spacing:.2px;transition:color .25s}
+.nav-item .zh{font-size:11px;color:var(--text3);margin-top:3px;transition:color .25s}
+.nav-item:hover .en{color:var(--text)}
+.nav-item.active .en{color:var(--accent);text-shadow:0 0 20px rgba(0,212,255,.3)}
+.nav-item.active .zh{color:var(--text2)}
+
+/* ===== 中间详情区 ===== */
+#detail{flex:1;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg,rgba(9,9,11,.95),rgba(12,12,16,.98));min-width:0}
+
+/* ===== 信息面板 ===== */
+#info-panel{padding:28px 32px;border-bottom:1px solid var(--border);overflow-y:auto;max-height:40%;position:relative}
+#info-panel::after{content:'';position:absolute;bottom:0;left:32px;right:32px;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.15),rgba(124,92,252,.15),transparent)}
+#info-panel::-webkit-scrollbar{width:3px}
+#info-panel::-webkit-scrollbar-track{background:transparent}
+#info-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:3px}
+
+#info-title{font-size:30px;font-weight:800;letter-spacing:-.8px;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 50%,#e879f9 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradient-shift 4s ease infinite}
+@keyframes gradient-shift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+#info-subtitle{font-size:12px;color:var(--text2);margin-top:6px;letter-spacing:.8px;font-weight:500}
+#info-desc{margin-top:16px;font-size:13.5px;line-height:1.8;color:rgba(255,255,255,.7);font-weight:400}
+
+.info-section{margin-top:16px}
+.info-section h3{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:10px;font-weight:600;display:flex;align-items:center;gap:6px}
+.info-section h3::before{content:'';display:inline-block;width:12px;height:1px;background:linear-gradient(90deg,var(--accent),transparent)}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px}
+.tag{display:inline-block;padding:5px 12px;border-radius:8px;font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:500;backdrop-filter:blur(8px);transition:all .2s}
+.tag.param{background:rgba(0,212,255,.08);color:var(--accent);border:1px solid rgba(0,212,255,.15);box-shadow:0 0 10px rgba(0,212,255,.05)}
+.tag.param:hover{background:rgba(0,212,255,.15);box-shadow:0 0 16px rgba(0,212,255,.1)}
+.tag.tech{background:rgba(124,92,252,.08);color:var(--accent2);border:1px solid rgba(124,92,252,.15);box-shadow:0 0 10px rgba(124,92,252,.05)}
+.tag.tech:hover{background:rgba(124,92,252,.15);box-shadow:0 0 16px rgba(124,92,252,.1)}
+
+/* ===== 右侧 Prompt 面板 ===== */
+#prompt-panel{width:340px;min-width:340px;background:var(--surface);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:relative}
+#prompt-panel::before{content:'';position:absolute;top:0;left:0;width:1px;height:100%;background:linear-gradient(180deg,transparent,rgba(124,92,252,.2) 30%,rgba(0,212,255,.2) 70%,transparent);pointer-events:none}
+#prompt-panel-header{padding:22px 20px 16px;border-bottom:1px solid var(--border);position:relative;flex-shrink:0}
+#prompt-panel-header::before{content:'';position:absolute;bottom:0;left:20px;right:20px;height:1px;background:linear-gradient(90deg,transparent,rgba(124,92,252,.3),rgba(0,212,255,.3),transparent)}
+#prompt-panel-header h2{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:8px}
+#prompt-panel-header h2::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent2);box-shadow:0 0 10px var(--accent2);animation:pulse-dot 2.5s ease-in-out infinite}
+#prompt-cards{flex:1;overflow-y:auto;padding:14px 14px 20px}
+#prompt-cards::-webkit-scrollbar{width:3px}
+#prompt-cards::-webkit-scrollbar-track{background:transparent}
+#prompt-cards::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:3px}
+
+/* ===== Prompt 卡片 — 毛玻璃 ===== */
+.prompt-card{margin-bottom:12px;padding:16px;background:rgba(255,255,255,.02);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:12px;font-size:12px;color:rgba(255,255,255,.5);line-height:1.7;font-family:'JetBrains Mono',monospace;word-break:break-all;position:relative;overflow:hidden;transition:border-color .3s,box-shadow .3s}
+.prompt-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--card-glow,rgba(255,255,255,.1)),transparent);opacity:.6}
+.prompt-card:hover{border-color:var(--card-border-hover,rgba(255,255,255,.1));box-shadow:0 4px 24px var(--card-shadow,rgba(0,0,0,.2))}
+.prompt-card .prompt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.prompt-card .prompt-label{font-family:'Inter',sans-serif;font-weight:600;font-size:11px;letter-spacing:.5px;display:flex;align-items:center;gap:6px}
+.prompt-card .prompt-text{color:rgba(255,255,255,.45);font-weight:400;font-size:11.5px;line-height:1.75}
+
+/* ===== 复制按钮 ===== */
+.copy-btn{display:flex;align-items:center;gap:5px;padding:5px 12px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:rgba(255,255,255,.03);color:var(--text3);font-size:10px;font-family:'Inter',sans-serif;font-weight:500;letter-spacing:.3px;cursor:pointer;transition:all .25s;flex-shrink:0;backdrop-filter:blur(8px)}
+.copy-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15);color:var(--text)}
+.copy-btn:active{transform:scale(.95)}
+.copy-btn.copied{border-color:var(--accent3);color:var(--accent3);background:rgba(52,211,153,.08)}
+.copy-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+#info-prompt{--card-glow:rgba(0,212,255,.2);--card-border-hover:rgba(0,212,255,.2);--card-shadow:rgba(0,212,255,.05)}
+#info-prompt .prompt-label{color:var(--accent)}
+#info-trae-prompt{--card-glow:rgba(52,211,153,.2);--card-border-hover:rgba(52,211,153,.2);--card-shadow:rgba(52,211,153,.05);border-color:rgba(52,211,153,.08)}
+#info-trae-prompt .prompt-label{color:var(--accent3)}
+#info-jimeng-prompt{--card-glow:rgba(251,146,60,.2);--card-border-hover:rgba(251,146,60,.2);--card-shadow:rgba(251,146,60,.05);border-color:rgba(251,146,60,.08)}
+#info-jimeng-prompt .prompt-label{color:var(--accent4)}
+
+/* ===== 3D 预览区 ===== */
+#preview-container{flex:1;position:relative;background:radial-gradient(ellipse at 50% 50%,rgba(15,15,22,1),rgba(6,6,8,1));min-height:250px;overflow:hidden}
+#preview-container::before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;border-top:1px solid var(--border);background:
+  radial-gradient(ellipse 40% 30% at 50% 0%,rgba(0,212,255,.04),transparent),
+  radial-gradient(ellipse 30% 40% at 100% 100%,rgba(124,92,252,.03),transparent)}
+#preview-container canvas{display:block;width:100%!important;height:100%!important;position:relative;z-index:0}
+#preview-label{position:absolute;bottom:16px;left:16px;z-index:2;font-size:10px;color:var(--text3);background:rgba(0,0,0,.5);backdrop-filter:blur(8px);padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.05);pointer-events:none;letter-spacing:.5px;font-weight:500}
+#preview-note{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;font-size:12px;color:var(--text2);text-align:center;pointer-events:none;display:none;background:rgba(0,0,0,.6);backdrop-filter:blur(12px);padding:12px 24px;border-radius:10px;border:1px solid rgba(255,255,255,.06);letter-spacing:.3px;font-weight:500}
+
+/* ===== 响应式 ===== */
+@media(max-width:1100px){
+  #prompt-panel{width:280px;min-width:280px}
+}
+@media(max-width:900px){
+  #app{flex-wrap:wrap}
+  #sidebar{width:100%;min-width:0;max-height:160px;border-right:none;border-bottom:1px solid var(--border)}
+  #sidebar::after{display:none}
+  #nav-list{display:flex;overflow-x:auto;overflow-y:hidden;padding:8px;gap:4px}
+  .nav-item{white-space:nowrap;flex-shrink:0}
+  .nav-item::before{display:none}
+  #detail{flex:1 1 50%;min-width:280px}
+  #prompt-panel{flex:1 1 50%;min-width:280px;width:auto;border-left:1px solid var(--border);border-top:none}
+  #info-panel{max-height:35%;padding:16px}
+  #info-title{font-size:22px}
+}
+@media(max-width:600px){
+  #detail{flex:1 1 100%}
+  #prompt-panel{flex:1 1 100%;border-left:none;border-top:1px solid var(--border)}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <h1>3D Visual Dictionary</h1>
+      <p>视觉资产与动效词典</p>
+    </div>
+    <ul id="nav-list"></ul>
+  </aside>
+  <main id="detail">
+    <div id="info-panel">
+      <div id="info-title">选择一个特效</div>
+      <div id="info-subtitle">从左侧列表中点击查看详情</div>
+      <div id="info-desc"></div>
+      <div id="info-params" class="info-section" style="display:none"><h3>核心参数</h3><div class="tag-list" id="param-tags"></div></div>
+      <div id="info-tech-section" class="info-section" style="display:none"><h3>前端落地技术</h3><div class="tag-list" id="tech-tags"></div></div>
+    </div>
+    <div id="preview-container">
+      <div id="preview-label">拖拽旋转 · 滚轮缩放</div>
+      <div id="preview-note"></div>
+    </div>
+  </main>
+  <aside id="prompt-panel">
+    <div id="prompt-panel-header">
+      <h2>Prompt 提示词</h2>
+    </div>
+    <div id="prompt-cards">
+      <div id="info-prompt" class="prompt-card" style="display:none"></div>
+      <div id="info-trae-prompt" class="prompt-card" style="display:none"></div>
+      <div id="info-jimeng-prompt" class="prompt-card" style="display:none"></div>
+    </div>
+  </aside>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+/* ============================================================
+   一、核心数据
+   ============================================================ */
+const DATA = [
+  {
+    id:'fresnel', en:'Fresnel', zh:'菲涅尔 / 边缘发光',
+    desc:'边缘反光增强，提升通透感。视线越贴近表面法线的掠射角，反射越强，中心趋于透明、边缘发出柔和辉光。常用于全息 UI、科技感产品展示和 X 光风格渲染。',
+    params:['Bias','Power','IOR'],
+    prompt:'Fresnel effect, glowing translucent edges, X-ray holographic style, cinematic rim lighting, dark background, 8K, ultra detail --v 6',
+    traePrompt:'请用 Three.js 实现一个菲涅尔边缘发光效果的 ShaderMaterial。要求：自定义 vertex/fragment shader，通过 dot(viewDirection, normal) 计算菲涅尔项，边缘发出青蓝色辉光（#00d4ff），中心区域半透明。支持 Bias、Power、Scale 三个 uniform 参数可调。附加扫描线动画效果，整体呈现全息 X 光风格。',
+    jimengPrompt:'一个悬浮在深黑背景中的抽象环形结雕塑，边缘散发强烈的青蓝色菲涅尔辉光，中心部分透明可见背景，表面有细密的全息扫描线纹理流动，整体呈现科幻全息 X 光风格，极致通透感，电影级体积光照，8K 超清渲染',
+    tech:['Three.js ShaderMaterial (自定义 GLSL)', 'dot(viewDir, normal) 菲涅尔项'],
+    note:''
+  },
+  {
+    id:'iridescence', en:'Iridescence', zh:'虹彩 / 薄膜干涉',
+    desc:'类似肥皂泡、镭射纸、甲虫鞘翅的视角变色效应。由薄膜干涉产生，随观察角度不同呈现连续光谱渐变色彩。是当下 3D 设计中极受欢迎的高级材质语言。',
+    params:['iridescence','iridescenceIOR','iridescenceThicknessRange'],
+    prompt:'Iridescent soap bubble material, thin-film interference, rainbow spectral shift, holographic foil texture, studio lighting, 8K --v 6',
+    traePrompt:'请用 Three.js MeshPhysicalMaterial 实现薄膜干涉虹彩效果。设置 iridescence: 1, iridescenceIOR: 1.8, iridescenceThicknessRange: [100, 800]，搭配 clearcoat: 0.5 增强表面光泽。需要一个程序化环境贴图提供反射信息，模型使用 TorusKnotGeometry，让虹彩色随视角变化呈现连续光谱渐变。',
+    jimengPrompt:'一个光滑的环形结雕塑表面覆盖肥皂泡薄膜质感，随视角变化呈现连续彩虹光谱色彩，如镭射全息箔纸般绚丽，表面流动着油膜般的紫绿蓝粉色渐变，深黑背景中漂浮，柔和的摄影棚灯光，8K 超写实渲染',
+    tech:['MeshPhysicalMaterial { iridescence: 1 }', 'Three.js r152+ 原生支持'],
+    note:''
+  },
+  {
+    id:'dispersion', en:'Dispersion', zh:'色散 / 光学色差',
+    desc:'光线穿透厚玻璃或水晶时，不同波长的光以不同角度折射，从而产生红绿蓝分色。效果类似棱镜彩虹，是"液态玻璃"设计趋势的核心视觉元素。',
+    params:['chromaticAberration','transmission','ior','roughness'],
+    prompt:'Liquid glass dispersion effect, chromatic aberration, prismatic rainbow caustics, crystal clear refractive material, black background, 8K --v 6',
+    traePrompt:'请用 Three.js MeshPhysicalMaterial 实现液态玻璃色散效果。关键参数：transmission: 1（全透射），roughness: 0，ior: 2.3（高折射率增强色散），thickness: 2.5，dispersion: 0.5。搭配 attenuationColor 做光线衰减着色。需要 PMREMGenerator 生成环境贴图，背景深黑以突出折射棱镜彩虹效果。',
+    jimengPrompt:'一个纯净透明的玻璃环形结雕塑，光线穿透时产生强烈的棱镜色散效果，红绿蓝光谱分离清晰可见，如同水晶棱镜折射彩虹焦散，表面绝对光滑无瑕，液态玻璃质感，深邃黑色背景衬托，8K 超写实渲染',
+    tech:['MeshPhysicalMaterial { transmission: 1 }', 'ior + thickness 调控色散', 'Post-processing Chromatic Aberration'],
+    note:''
+  },
+  {
+    id:'sss', en:'Subsurface Scattering', zh:'次表面散射 / SSS',
+    desc:'光线透入半透明表皮内部，在介质中多次散射后从另一处射出。赋予物体柔和的内发光感，如玉石、蜡烛、人类皮肤、硅胶软糖。是写实渲染的关键技术之一。',
+    params:['thickness','attenuationDistance','attenuationColor'],
+    prompt:'Subsurface scattering jade material, translucent wax gummy bear, warm inner glow, soft diffused light penetrating surface, 8K --v 6',
+    traePrompt:'请用 Three.js MeshPhysicalMaterial 模拟次表面散射效果。设置 transmission: 0.7, thickness: 3.0, attenuationDistance: 0.5, attenuationColor: 暖橙色(#ff6622)。底色使用翡翠绿(#44cc88)，roughness: 0.35 保持半哑光质感。光线穿透模型时应呈现温暖的内部散射光晕，类似玉石或硅胶软糖的通透感。',
+    jimengPrompt:'一个翡翠绿色的半透明环形结雕塑，光线从一侧照入后在内部温暖散射，边缘透出橙色暖光，如同和田玉或高级硅胶软糖的质感，表面半哑光带有微妙的内发光效果，柔和漫射光照穿透表皮，8K 超写实渲染',
+    tech:['MeshPhysicalMaterial { transmission, thickness }', 'attenuationDistance + attenuationColor', '自定义 SSS Shader (高级)'],
+    note:''
+  },
+  {
+    id:'bloom', en:'Bloom', zh:'辉光 / 泛光',
+    desc:'高亮度区域的光线溢出边缘，产生梦幻柔焦的视觉膨胀感。是电影和游戏中营造氛围感、科幻感的核心后期特效。搭配 HDR 效果拉满。',
+    params:['threshold','strength','radius'],
+    prompt:'Bloom glow effect, ethereal light bleed, dreamy cinematic haze, neon luminescence overexposure, soft bokeh edges, 8K --v 6',
+    traePrompt:'请用 Three.js 实现 Bloom 辉光后处理效果。使用 EffectComposer + RenderPass + UnrealBloomPass 管线。Bloom 参数：threshold: 0.1, strength: 1.8, radius: 0.6。模型材质使用 MeshStandardMaterial，设置 emissive: 青蓝色(#00d4ff), emissiveIntensity: 2.5 触发辉光。开启 ACESFilmicToneMapping 做 HDR 色调映射。',
+    jimengPrompt:'一个自发光的环形结雕塑散发强烈的青蓝色霓虹辉光，光芒溢出边缘形成梦幻柔焦光晕，如同过曝的霓虹灯管，周围弥漫朦胧的光雾氛围，极致的赛博朋克梦幻感，深黑背景中浮动，8K 电影级渲染',
+    tech:['EffectComposer + UnrealBloomPass', 'emissive 自发光材质配合', 'Selective Bloom (选择性辉光)'],
+    note:'⚡ 已启用实时 Bloom 后处理'
+  },
+  {
+    id:'clearcoat', en:'Clearcoat', zh:'清漆涂层',
+    desc:'在底层材质（如车漆、碳纤维）之上叠加一层绝对光滑的透明反光层。形成双层反射——底层保留粗糙纹理，表层呈现锐利高光。高端汽车渲染的标配。',
+    params:['clearcoat','clearcoatRoughness'],
+    prompt:'Clearcoat car paint finish, dual-layer glossy reflection, carbon fiber under glass coat, sharp specular highlight, studio HDRI, 8K --v 6',
+    traePrompt:'请用 Three.js MeshPhysicalMaterial 实现清漆涂层效果。底层设置：color: 酒红色(#cc2244), metalness: 0.6, roughness: 0.6（模拟粗糙底漆）。涂层设置：clearcoat: 1.0, clearcoatRoughness: 0.0（绝对光滑透明涂层）。双层反射效果——底层保留漫反射纹理，表层叠加锐利镜面高光，类似高端汽车车漆效果。',
+    jimengPrompt:'一个酒红色的环形结雕塑表面覆盖一层极其光滑的透明清漆涂层，底层可见粗糙的金属漆面纹理，表层叠加锐利的镜面高光反射，双层反射效果如同高端跑车车漆，摄影棚 HDRI 环境灯光，8K 超写实渲染',
+    tech:['MeshPhysicalMaterial { clearcoat: 1 }', 'clearcoatRoughness 控制涂层模糊度', 'clearcoatNormalMap (涂层法线)'],
+    note:''
+  },
+  {
+    id:'anisotropy', en:'Anisotropy', zh:'各向异性反光',
+    desc:'高光沿特定方向拉长成线，打破常规圆形高光。如拉丝金属、CD/DVD 盘面、丝绸织物。让平坦的金属表面瞬间拥有工业加工感和精致纹理。',
+    params:['anisotropy','anisotropyRotation'],
+    prompt:'Anisotropic brushed metal highlight, stretched specular reflection, CD disc surface rainbow streak, industrial machined aluminum, 8K --v 6',
+    traePrompt:'请用 Three.js MeshPhysicalMaterial 实现各向异性反光效果。设置 metalness: 1.0, roughness: 0.25, anisotropy: 1.0，并通过 anisotropyRotation 随时间旋转高光方向（动画效果）。颜色使用亮银色(#dddddd)，envMapIntensity: 1.5 增强环境反射。效果类似拉丝金属或 CD 盘面的线性拉长高光。',
+    jimengPrompt:'一个拉丝金属质感的银色环形结雕塑，高光沿特定方向被拉长成细线，如同精密加工的铝合金表面或 CD 光盘的彩虹条纹，金属表面可见精细的拉丝纹理，高光缓缓旋转流动，工业精密加工感，8K 超写实渲染',
+    tech:['MeshPhysicalMaterial { anisotropy: 1 }', 'anisotropyRotation 旋转方向', 'Three.js r162+ 原生支持'],
+    note:''
+  },
+  {
+    id:'metaball', en:'Metaball', zh:'融球 / 液态融合',
+    desc:'两个或多个物体靠近时边缘黏合拉丝，产生有机的液态融合效果。真正的"液态核心"：不是简单的变形，而是基于隐式曲面的等值面提取。广泛用于液态金属、水滴、生物有机形态。',
+    params:['Raymarching','Marching Cubes','Threshold'],
+    prompt:'Metaball liquid metal fusion, organic blob merging, viscous chrome droplets connecting, smooth isosurface topology, 8K --v 6',
+    traePrompt:'请用 Three.js 实现 Metaball 融球效果。方案一（简化版）：多个 SphereGeometry 使用有机轨迹运动，MeshPhysicalMaterial 铬金属材质 metalness: 0.95。方案二（高级）：使用 MarchingCubes addon 实时计算等值面，或在 fragment shader 中用 Raymarching + SDF 球体混合函数 smin() 实现真正的液态融合拉丝效果。',
+    jimengPrompt:'多个液态金属水银球体在空中缓缓靠近并融合，边缘产生黏连拉丝效果，如同水银液滴汇聚，表面呈现高反射铬金属质感，有机的生物形态流动变化，光滑的等值面拓扑结构，深黑背景，8K 超写实渲染',
+    tech:['MarchingCubes (Three.js Addon)', 'Raymarching SDF in Fragment Shader', 'Compute Shader (WebGPU)'],
+    note:'🔮 使用 MarchingCubes 实时计算等值面'
+  }
+];
+
+/* ============================================================
+   二、渲染导航列表
+   ============================================================ */
+const navList = document.getElementById('nav-list');
+DATA.forEach((item, idx) => {
+  const li = document.createElement('li');
+  li.className = 'nav-item';
+  li.dataset.idx = idx;
+  li.innerHTML = `<div class="en">${item.en}</div><div class="zh">${item.zh}</div>`;
+  li.addEventListener('click', () => selectItem(idx));
+  navList.appendChild(li);
+});
+
+/* ============================================================
+   三、Three.js 场景初始化
+   ============================================================ */
+const container = document.getElementById('preview-container');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+container.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a0a);
+
+const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+camera.position.set(0, 0, 5);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.minDistance = 2;
+controls.maxDistance = 12;
+
+// 灯光
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+scene.add(ambientLight);
+
+const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight1.position.set(5, 5, 5);
+scene.add(dirLight1);
+
+const dirLight2 = new THREE.DirectionalLight(0x88aaff, 0.6);
+dirLight2.position.set(-3, -2, -4);
+scene.add(dirLight2);
+
+// 环境贴图 (程序化生成一个简单的渐变环境)
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+const envScene = new THREE.Scene();
+const envGeo = new THREE.SphereGeometry(50, 32, 32);
+const envMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  uniforms: {},
+  vertexShader: `varying vec3 vWorldPos;void main(){vWorldPos=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader: `varying vec3 vWorldPos;void main(){float h=normalize(vWorldPos).y*.5+.5;vec3 c=mix(vec3(.02,.02,.05),vec3(.15,.15,.25),h);gl_FragColor=vec4(c,1.);}`
+});
+envScene.add(new THREE.Mesh(envGeo, envMat));
+const envMap = pmremGenerator.fromScene(envScene, 0.04).texture;
+scene.environment = envMap;
+envScene.traverse(c => { if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); });
+pmremGenerator.dispose();
+
+// 主模型 — TorusKnot
+const torusGeo = new THREE.TorusKnotGeometry(1.1, 0.38, 200, 32);
+let currentMaterial = new THREE.MeshPhysicalMaterial({ color: 0x888888, roughness: 0.3, metalness: 0.5 });
+const torusMesh = new THREE.Mesh(torusGeo, currentMaterial);
+scene.add(torusMesh);
+
+// Metaball 场景 (隐藏，需要时切换)
+let metaballGroup = null;
+let metaballBalls = [];
+let metaballGeo = null;
+
+function createMetaballScene() {
+  if (metaballGroup) return;
+  metaballGroup = new THREE.Group();
+
+  // 使用多个球体模拟融球效果（简化版）
+  const ballCount = 5;
+  const material = new THREE.MeshPhysicalMaterial({
+    color: 0xcc88ff,
+    metalness: 0.95,
+    roughness: 0.05,
+    envMapIntensity: 2.0,
+  });
+
+  for (let i = 0; i < ballCount; i++) {
+    const r = 0.35 + Math.random() * 0.3;
+    const geo = new THREE.SphereGeometry(r, 48, 48);
+    const mesh = new THREE.Mesh(geo, material);
+    mesh.userData.phase = Math.random() * Math.PI * 2;
+    mesh.userData.speed = 0.5 + Math.random() * 0.8;
+    mesh.userData.radius = 0.8 + Math.random() * 0.6;
+    mesh.userData.axis = new THREE.Vector3(
+      Math.random() - 0.5,
+      Math.random() - 0.5,
+      Math.random() - 0.5
+    ).normalize();
+    metaballBalls.push(mesh);
+    metaballGroup.add(mesh);
+  }
+}
+createMetaballScene();
+
+// Bloom 后处理
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(container.clientWidth, container.clientHeight),
+  0.8, 0.4, 0.2
+);
+bloomPass.enabled = false;
+composer.addPass(bloomPass);
+
+/* ============================================================
+   四、材质工厂 — 为每个特效创建对应材质
+   ============================================================ */
+function createFresnelMaterial() {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    uniforms: {
+      uTime: { value: 0 },
+      uColor: { value: new THREE.Color(0x00d4ff) },
+      uColor2: { value: new THREE.Color(0x7b61ff) }
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vViewDir;
+      varying vec2 vUv;
+      void main(){
+        vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+        vNormal = normalize(normalMatrix * normal);
+        vViewDir = normalize(-mvPos.xyz);
+        vUv = uv;
+        gl_Position = projectionMatrix * mvPos;
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform vec3 uColor;
+      uniform vec3 uColor2;
+      varying vec3 vNormal;
+      varying vec3 vViewDir;
+      varying vec2 vUv;
+      void main(){
+        float fresnel = 1.0 - abs(dot(vViewDir, vNormal));
+        fresnel = pow(fresnel, 3.0);
+        vec3 col = mix(uColor, uColor2, fresnel);
+        float scanline = sin(vUv.y * 80.0 + uTime * 2.0) * 0.05 + 0.95;
+        float alpha = fresnel * 0.9 + 0.08;
+        gl_FragColor = vec4(col * scanline * (1.0 + fresnel * 2.0), alpha);
+      }
+    `
+  });
+}
+
+function createIridescenceMaterial() {
+  return new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    metalness: 0.0,
+    roughness: 0.1,
+    iridescence: 1.0,
+    iridescenceIOR: 1.8,
+    iridescenceThicknessRange: [100, 800],
+    clearcoat: 0.5,
+    envMapIntensity: 1.5,
+  });
+}
+
+function createDispersionMaterial() {
+  return new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    metalness: 0.0,
+    roughness: 0.0,
+    transmission: 1.0,
+    thickness: 2.5,
+    ior: 2.3,
+    envMapIntensity: 1.0,
+    specularIntensity: 1.0,
+    specularColor: new THREE.Color(0xffffff),
+    attenuationColor: new THREE.Color(0xffeedd),
+    attenuationDistance: 3.0,
+    dispersion: 0.5,
+  });
+}
+
+function createSSSMaterial() {
+  return new THREE.MeshPhysicalMaterial({
+    color: 0x44cc88,
+    metalness: 0.0,
+    roughness: 0.35,
+    transmission: 0.7,
+    thickness: 3.0,
+    attenuationDistance: 0.5,
+    attenuationColor: new THREE.Color(0xff6622),
+    ior: 1.5,
+    envMapIntensity: 0.8,
+  });
+}
+
+function createBloomMaterial() {
+  return new THREE.MeshStandardMaterial({
+    color: 0x000000,
+    emissive: new THREE.Color(0x00d4ff),
+    emissiveIntensity: 2.5,
+    metalness: 0.8,
+    roughness: 0.2,
+  });
+}
+
+function createClearcoatMaterial() {
+  return new THREE.MeshPhysicalMaterial({
+    color: 0xcc2244,
+    metalness: 0.6,
+    roughness: 0.6,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.0,
+    envMapIntensity: 1.2,
+  });
+}
+
+function createAnisotropyMaterial() {
+  return new THREE.MeshPhysicalMaterial({
+    color: 0xdddddd,
+    metalness: 1.0,
+    roughness: 0.25,
+    anisotropy: 1.0,
+    anisotropyRotation: 0,
+    envMapIntensity: 1.5,
+  });
+}
+
+const materialFactories = {
+  fresnel: createFresnelMaterial,
+  iridescence: createIridescenceMaterial,
+  dispersion: createDispersionMaterial,
+  sss: createSSSMaterial,
+  bloom: createBloomMaterial,
+  clearcoat: createClearcoatMaterial,
+  anisotropy: createAnisotropyMaterial,
+  metaball: () => new THREE.MeshPhysicalMaterial({
+    color: 0xcc88ff, metalness: 0.95, roughness: 0.05, envMapIntensity: 2.0
+  })
+};
+
+/* ============================================================
+   五、Prompt 渲染与复制
+   ============================================================ */
+const COPY_ICON = `<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`;
+const CHECK_ICON = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+
+function renderPromptCard(elId, label, text) {
+  const el = document.getElementById(elId);
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="prompt-header">
+      <div class="prompt-label">${label}</div>
+      <button class="copy-btn" data-prompt="${text.replace(/"/g, '&quot;')}">${COPY_ICON}<span>复制</span></button>
+    </div>
+    <div class="prompt-text">${text}</div>`;
+  el.querySelector('.copy-btn').addEventListener('click', handleCopy);
+}
+
+function handleCopy(e) {
+  const btn = e.currentTarget;
+  const text = btn.dataset.prompt;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = `${CHECK_ICON}<span>已复制</span>`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = `${COPY_ICON}<span>复制</span>`;
+    }, 2000);
+  }).catch(() => {
+    // fallback for non-HTTPS
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.classList.add('copied');
+    btn.innerHTML = `${CHECK_ICON}<span>已复制</span>`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = `${COPY_ICON}<span>复制</span>`;
+    }, 2000);
+  });
+}
+
+/* ============================================================
+   六、选中逻辑
+   ============================================================ */
+let currentIdx = -1;
+let isMetaballMode = false;
+
+function selectItem(idx) {
+  if (idx === currentIdx) return;
+  currentIdx = idx;
+  const item = DATA[idx];
+
+  // 更新导航高亮
+  document.querySelectorAll('.nav-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  // 更新信息面板
+  document.getElementById('info-title').textContent = item.en;
+  document.getElementById('info-subtitle').textContent = item.zh;
+  document.getElementById('info-desc').textContent = item.desc;
+
+  const paramTags = document.getElementById('param-tags');
+  paramTags.innerHTML = item.params.map(p => `<span class="tag param">${p}</span>`).join('');
+  document.getElementById('info-params').style.display = 'block';
+
+  const techTags = document.getElementById('tech-tags');
+  techTags.innerHTML = item.tech.map(t => `<span class="tag tech">${t}</span>`).join('');
+  document.getElementById('info-tech-section').style.display = 'block';
+
+  renderPromptCard('info-prompt', '🎨 Midjourney', item.prompt);
+  renderPromptCard('info-trae-prompt', '🤖 Trae', item.traePrompt);
+  renderPromptCard('info-jimeng-prompt', '🎬 即梦生视频', item.jimengPrompt);
+
+  // 预览提示
+  const noteEl = document.getElementById('preview-note');
+  if (item.note) {
+    noteEl.textContent = item.note;
+    noteEl.style.display = 'block';
+    setTimeout(() => { noteEl.style.display = 'none'; }, 3000);
+  } else {
+    noteEl.style.display = 'none';
+  }
+
+  // 切换 3D 材质 / 场景
+  switchScene(item.id);
+}
+
+function switchScene(id) {
+  // 清理旧材质
+  if (currentMaterial && currentMaterial.dispose) currentMaterial.dispose();
+
+  // Metaball 模式切换
+  if (id === 'metaball') {
+    isMetaballMode = true;
+    torusMesh.visible = false;
+    if (metaballGroup) scene.add(metaballGroup);
+    bloomPass.enabled = false;
+    renderer.toneMappingExposure = 1.2;
+    return;
+  } else {
+    isMetaballMode = false;
+    torusMesh.visible = true;
+    if (metaballGroup && metaballGroup.parent) scene.remove(metaballGroup);
+  }
+
+  // Bloom 特殊处理
+  if (id === 'bloom') {
+    bloomPass.enabled = true;
+    bloomPass.threshold = 0.1;
+    bloomPass.strength = 1.8;
+    bloomPass.radius = 0.6;
+    renderer.toneMappingExposure = 1.0;
+  } else {
+    bloomPass.enabled = false;
+    renderer.toneMappingExposure = 1.2;
+  }
+
+  // 创建新材质
+  const factory = materialFactories[id];
+  if (factory) {
+    currentMaterial = factory();
+    torusMesh.material = currentMaterial;
+  }
+}
+
+/* ============================================================
+   六、动画循环
+   ============================================================ */
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const elapsed = clock.getElapsedTime();
+  const delta = clock.getDelta();
+
+  controls.update();
+
+  // TorusKnot 缓慢旋转
+  if (torusMesh.visible) {
+    torusMesh.rotation.y = elapsed * 0.15;
+    torusMesh.rotation.x = Math.sin(elapsed * 0.1) * 0.1;
+  }
+
+  // Fresnel 时间 uniform
+  if (currentMaterial && currentMaterial.uniforms && currentMaterial.uniforms.uTime) {
+    currentMaterial.uniforms.uTime.value = elapsed;
+  }
+
+  // Metaball 动画
+  if (isMetaballMode && metaballBalls.length > 0) {
+    metaballBalls.forEach((ball, i) => {
+      const t = elapsed * ball.userData.speed + ball.userData.phase;
+      const r = ball.userData.radius;
+      ball.position.set(
+        Math.sin(t) * r * ball.userData.axis.x + Math.cos(t * 0.7) * r * 0.5,
+        Math.cos(t * 1.3) * r * ball.userData.axis.y,
+        Math.sin(t * 0.9) * r * ball.userData.axis.z + Math.cos(t * 0.5) * r * 0.3
+      );
+      // 脉冲缩放
+      const s = 1.0 + Math.sin(t * 2.0) * 0.08;
+      ball.scale.setScalar(s);
+    });
+  }
+
+  // Anisotropy 旋转动画
+  if (currentMaterial && currentMaterial.anisotropy !== undefined && currentMaterial.anisotropy > 0) {
+    currentMaterial.anisotropyRotation = elapsed * 0.3;
+  }
+
+  // 渲染
+  if (bloomPass.enabled) {
+    composer.render();
+  } else {
+    renderer.render(scene, camera);
+  }
+}
+animate();
+
+/* ============================================================
+   七、窗口自适应
+   ============================================================ */
+window.addEventListener('resize', () => {
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+  composer.setSize(w, h);
+});
+
+// 使用 ResizeObserver 处理面板大小变化
+const resizeObserver = new ResizeObserver(() => {
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  if (w > 0 && h > 0) {
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+    composer.setSize(w, h);
+  }
+});
+resizeObserver.observe(container);
+
+/* ============================================================
+   八、自动选中第一个
+   ============================================================ */
+selectItem(0);
+
+</script>
+</body>
+</html>
