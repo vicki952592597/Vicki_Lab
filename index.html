@@ -327,6 +327,127 @@ const DATA = [
     jimengPrompt:'多个液态金属水银球体在空中缓缓靠近并融合，边缘产生黏连拉丝效果，如同水银液滴汇聚，表面呈现高反射铬金属质感，有机的生物形态流动变化，光滑的等值面拓扑结构，深黑背景，8K 超写实渲染',
     tech:['MarchingCubes (Three.js Addon)', 'Raymarching SDF in Fragment Shader', 'Compute Shader (WebGPU)'],
     note:'🔮 使用 MarchingCubes 实时计算等值面'
+  },
+  // ======== Vol.2：光学与物理篇 ========
+  {
+    id:'glass', en:'Glassmorphism', zh:'毛玻璃 / 空间透视',
+    desc:'现代 UI 设计必备效果。通过高斯模糊透出背景内容，同时保持前景卡片的层次感与通透感。iOS 和 Windows Fluent Design 的核心视觉语言。',
+    params:['transmission','roughness','thickness','ior'],
+    prompt:'Glassmorphism UI card, frosted glass panel floating over colorful gradient background, soft blur, depth of field, minimal design, 8K --v 6',
+    traePrompt:'请用 Three.js MeshPhysicalMaterial 实现毛玻璃效果。在场景背景放置多个彩色几何体，前景放一个 PlaneGeometry 面片，材质设置 transmission: 1, roughness: 0.15, thickness: 0.5, ior: 1.5。需要 PMREMGenerator 环境贴图支持折射。',
+    jimengPrompt:'一块悬浮的半透明毛玻璃面板，背后透出模糊的彩色光斑和渐变色彩，边缘折射出微弱的光晕，极简现代 UI 设计感，柔和的景深效果，8K 超写实渲染',
+    tech:['MeshPhysicalMaterial','transmission: 1','CSS backdrop-filter 平替'],
+    note:''
+  },
+  {
+    id:'caustics', en:'Caustics', zh:'焦散光斑',
+    desc:'光线穿透透明物体（如玻璃杯、水面）后，因折射汇聚在底面形成的美丽流动光斑图案。是写实渲染中最迷人的光学现象之一。',
+    params:['Photon mapping','Caustics intensity','Refraction index'],
+    prompt:'Caustics light pattern on pool bottom, sunlight refracted through clear water surface, dancing light ripples, hyper-realistic, 8K --v 6',
+    traePrompt:'请用 Three.js ShaderMaterial 实现焦散光斑效果。通过多层 UV 偏移叠加 sin/cos 函数模拟水面焦散图案，颜色使用青蓝渐变，添加时间 uniform 让光斑流动。',
+    jimengPrompt:'阳光穿透清澈水面在池底形成流动的焦散光斑，光线交织成美丽的网格图案，水波荡漾带动光斑缓缓流动变化，蓝绿色调，超写实水下摄影风格，8K 渲染',
+    tech:['焦散贴图动画','ShaderMaterial UV 动画','Water caustics texture'],
+    note:''
+  },
+  {
+    id:'chromatic', en:'Chromatic Aberration', zh:'镜头色差 / RGB 分离',
+    desc:'图像边缘的红绿蓝三通道产生微妙错位分离，模拟廉价镜头或故意制造的前卫失真效果。搭配运动场景极具视觉冲击力。',
+    params:['offset','direction','intensity'],
+    prompt:'Chromatic aberration effect, RGB channel split, glitch aesthetic, prismatic color fringing, cinematic lens distortion, 8K --v 6',
+    traePrompt:'请用 Three.js ShaderMaterial 实现色差效果。在 fragment shader 中对纹理采样三次，R/G/B 三个通道分别使用偏移的 UV 坐标产生边缘彩色分离。',
+    jimengPrompt:'一个 3D 物体表面呈现强烈的 RGB 色差分离效果，红绿蓝三色通道错位产生棱镜般的彩色边缘，前卫的镜头畸变感，深黑背景，赛博朋克氛围，8K 渲染',
+    tech:['ShaderMaterial RGB 偏移','EffectComposer + ShaderPass','Post-processing'],
+    note:''
+  },
+  {
+    id:'voronoi', en:'Voronoi Fracture', zh:'泰森多边形碎裂',
+    desc:'基于 Voronoi 算法将物体切割成自然不规则的锋利碎片。每个碎片拥有独特的多边形轮廓，模拟玻璃破碎、岩石断裂等真实物理破坏效果。',
+    params:['Voronoi seeds','Cell count','Edge thickness'],
+    prompt:'Voronoi fracture pattern, shattered glass fragments floating in space, geometric cellular decomposition, sharp polygon edges, 8K --v 6',
+    traePrompt:'请用 Three.js ShaderMaterial 实现 Voronoi 纹理效果。在 fragment shader 中计算到最近随机种子点的距离生成 Voronoi cell 图案，边缘发光、内部暗色。',
+    jimengPrompt:'一个球体表面布满泰森多边形碎裂纹路，不规则的多边形碎片边缘发出微弱的青蓝色光芒，如同即将崩碎的水晶球，8K 超写实渲染',
+    tech:['Voronoi 算法 + BufferGeometry','CSG Boolean 切割','程序化纹理 Shader'],
+    note:''
+  },
+  {
+    id:'softbody', en:'Soft Body / Cloth', zh:'柔体 / 布料物理',
+    desc:'物体像丝绸、纸张一样随风起伏弯曲飘动。通过顶点位移模拟柔软材质的物理行为，是动态场景中增添生命力的关键技术。',
+    params:['Vertex displacement','Frequency','Amplitude','Phase'],
+    prompt:'Flowing silk cloth simulation, soft fabric rippling in wind, gentle wave deformation, elegant draping material, 8K --v 6',
+    traePrompt:'请用 Three.js 实现布料飘动效果。创建 PlaneGeometry(4,4,64,64) 高分段平面，在 render 循环中用 sin/cos 修改顶点 Z 坐标实现波浪起伏。',
+    jimengPrompt:'一块柔软的丝绸布料在微风中优雅飘动起伏，表面呈现细腻的波浪褶皱，光线在起伏面上形成美丽的明暗变化，深色背景，8K 超写实渲染',
+    tech:['PlaneGeometry 高分段','顶点 Z 轴 sin/cos 动画','Verlet integration (高级)'],
+    note:''
+  },
+  {
+    id:'volumetric', en:'Volumetric Lighting', zh:'体积光 / 丁达尔效应',
+    desc:'光线在含有微粒的空气中形成清晰可见的光柱。是电影和游戏中营造神圣感、戏剧性氛围的核心光效技术。',
+    params:['Density','Decay','Exposure','Samples'],
+    prompt:'Volumetric lighting god rays, Tyndall effect light beams through fog, dramatic atmospheric scattering, cathedral light shafts, 8K --v 6',
+    traePrompt:'请用 Three.js 模拟体积光效果。创建 ConeGeometry 锥体，ShaderMaterial 根据 UV.y 做渐变透明度衰减，AdditiveBlending 叠加。多个锥体模拟光柱。',
+    jimengPrompt:'金色的体积光束从高处穿透薄雾向下照射，光柱中可见细微的尘埃微粒漂浮，丁达尔效应清晰可见，戏剧性的氛围光照，8K 渲染',
+    tech:['Volumetric Shader','Additive Blending 叠加','God Rays 后处理'],
+    note:''
+  },
+  {
+    id:'parallax', en:'Parallax Mapping', zh:'视差贴图 / 深度凹凸',
+    desc:'在纯平面上利用视角移动产生极其逼真的 3D 凹凸深度感。无需增加几何面数，仅通过贴图偏移即可创造出令人惊叹的立体错觉。',
+    params:['displacementMap','displacementScale','displacementBias'],
+    prompt:'Parallax depth mapping, deep 3D relief texture on flat surface, dramatic depth illusion, carved stone surface, 8K --v 6',
+    traePrompt:'请用 Three.js MeshStandardMaterial 实现视差凹凸效果。PlaneGeometry(3,3,128,128) 高分段平面，程序化生成灰度高度图作为 displacementMap，scale: 0.8。',
+    jimengPrompt:'一个平面表面呈现极其逼真的 3D 凹凸浮雕效果，深邃的沟壑和凸起的纹理随视角移动产生真实的视差变化，微距摄影风格，8K 渲染',
+    tech:['MeshStandardMaterial + displacementMap','高分段几何体','Parallax Occlusion Shader'],
+    note:''
+  },
+  {
+    id:'particle', en:'Particle Morphing', zh:'粒子变形 / 汇聚',
+    desc:'无数离散的微小发光粒子瞬间汇聚合并成一个完整的 3D 形状。解构与重组之间的视觉张力，是品牌动画和科技发布会的经典视效。',
+    params:['Point count','Morph progress','Point size','Opacity'],
+    prompt:'Particle morphing effect, thousands of luminous dots converging into 3D shape, glowing point cloud formation, 8K --v 6',
+    traePrompt:'请用 Three.js 实现粒子变形效果。从 TorusKnotGeometry 提取顶点坐标作为目标位置，创建等量随机起始位置，用 Points + PointsMaterial + lerp 插值动画。',
+    jimengPrompt:'无数微小的发光粒子从四面八方飞速汇聚，逐渐组合成一个精确的 3D 几何形状，科技感十足的数字粒子云聚合效果，深黑背景，8K 渲染',
+    tech:['Points + PointsMaterial','BufferGeometry 顶点补间','GSAP / 手动 lerp 动画'],
+    note:''
+  },
+  {
+    id:'ao', en:'Ambient Occlusion', zh:'环境光遮蔽 / AO',
+    desc:'模拟物体缝隙、夹角和凹陷处因环境光被遮挡而产生的深邃柔和阴影。是消除 3D 模型"塑料感"、增加真实感的关键渲染技术。',
+    params:['aoMap','aoMapIntensity','SSAO radius'],
+    prompt:'Ambient occlusion rendering, deep contact shadows in crevices, soft shadowing between surfaces, clay render, 8K --v 6',
+    traePrompt:'请用 Three.js 展示 AO 效果。创建多个紧密排列的 BoxGeometry 堆叠，MeshStandardMaterial 白色哑光，展现缝隙处的自然阴影。',
+    jimengPrompt:'多个白色几何体紧密排列堆叠，缝隙和夹角处呈现深邃柔和的环境光遮蔽阴影，黏土渲染般的纯净质感，8K 渲染',
+    tech:['MeshStandardMaterial + aoMap','程序化 AO 烘焙','SAOPass / SSAOPass 后处理'],
+    note:''
+  },
+  {
+    id:'glitch', en:'Glitch / Data Moshing', zh:'故障艺术 / 数据损坏',
+    desc:'画面产生数字损坏、像素撕裂、色块错位的赛博朋克效果。模拟信号干扰和数据传输错误的美学，是前卫数字艺术的标志性视觉语言。',
+    params:['Distortion amount','Scan line gap','Color shift'],
+    prompt:'Glitch art effect, digital data corruption, pixel sorting distortion, VHS scan line artifacts, cyberpunk aesthetic, 8K --v 6',
+    traePrompt:'请用 Three.js ShaderMaterial 实现故障艺术效果。fragment shader 中按行随机偏移 UV.x + 扫描线 + RGB 三通道偏移，step(random, threshold) 控制随机触发。',
+    jimengPrompt:'一个 3D 物体表面呈现强烈的数字故障效果，画面水平撕裂错位，RGB 色彩通道分离，VHS 扫描线干扰，赛博朋克数据损坏美学，8K 渲染',
+    tech:['ShaderMaterial 扫描线 + UV 偏移','GlitchPass 后处理','随机触发时间控制'],
+    note:''
+  },
+  {
+    id:'liquidglass', en:'Liquid Glass', zh:'液态玻璃',
+    desc:'2025 年最热门的设计趋势。融合了高折射率、色散棱镜效果和流体形变的透明玻璃质感。物体像一团凝固的水滴，拥有极致的透射、焦散和彩虹色散。Apple、Google 新一代 UI 设计语言的灵魂。',
+    params:['transmission','ior','dispersion','thickness','roughness','chromaticAberration'],
+    prompt:'Liquid glass material, transparent fluid glass blob, high refraction, prismatic rainbow dispersion, melting crystal water drop, 8K --v 6',
+    traePrompt:'请用 Three.js MeshPhysicalMaterial 实现液态玻璃效果。transmission: 1, roughness: 0.02, ior: 2.4, thickness: 3.0, dispersion: 0.8。IcosahedronGeometry 高细分 + 顶点 sin/cos 多频叠加模拟液态流动变形。',
+    jimengPrompt:'一团晶莹剔透的液态玻璃悬浮在深黑背景中，表面如融化的水晶般缓缓流动变形，光线穿透时产生强烈的棱镜色散和彩虹焦散，如同凝固的纯水液滴，8K 超写实渲染',
+    tech:['MeshPhysicalMaterial { transmission:1 }','ior 2.0+ 高折射色散','dispersion 棱镜效果','动态顶点变形'],
+    note:''
+  },
+  {
+    id:'liquidmetal', en:'Liquid Metal', zh:'液态金属',
+    desc:'如同 T-1000 终结者般的液态水银金属。极高的镜面反射率、完美光滑的有机流体形态，表面如同流动的镜子般反射周围环境。融合了金属质感和流体动力学的极致视觉表达。',
+    params:['metalness','roughness','envMapIntensity','vertex displacement'],
+    prompt:'Liquid metal mercury blob, chrome mirror surface, T-1000 fluid metal, organic morphing shape, perfect specular reflection, 8K --v 6',
+    traePrompt:'请用 Three.js MeshPhysicalMaterial 实现液态金属效果。metalness: 1.0, roughness: 0.0, envMapIntensity: 2.5, clearcoat: 0.8。IcosahedronGeometry(1.2,6) + 多层 noise 顶点位移模拟有机液态流动。',
+    jimengPrompt:'一团液态水银金属悬浮在空中，表面如镜面般完美反射周围环境，形态像有生命的有机体般缓缓流动变形，极致的铬金属光泽，如同终结者 T-1000，8K 超写实渲染',
+    tech:['MeshPhysicalMaterial { metalness:1 }','动态顶点 Noise 变形','高质量 HDRI 环境反射','法线实时重算'],
+    note:''
   }
 ];
 
@@ -581,6 +702,212 @@ const materialFactories = {
 };
 
 /* ============================================================
+   Vol.2 扩展场景管理
+   ============================================================ */
+let extraObjects = [];
+function clearExtras() {
+  extraObjects.forEach(obj => {
+    scene.remove(obj);
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) {
+      if (obj.material.map) obj.material.map.dispose();
+      if (obj.material.displacementMap) obj.material.displacementMap.dispose();
+      obj.material.dispose();
+    }
+  });
+  extraObjects = [];
+}
+
+// 判断是否为 Vol.2 多场景模式
+const VOL2_IDS = ['glass','caustics','chromatic','voronoi','softbody','volumetric','parallax','particle','ao','glitch','liquidglass','liquidmetal'];
+
+function buildVol2Scene(id) {
+  switch(id) {
+    case 'glass': return buildGlassScene();
+    case 'caustics': return buildCausticsScene();
+    case 'chromatic': return buildChromaticScene();
+    case 'voronoi': return buildVoronoiScene();
+    case 'softbody': return buildSoftBodyScene();
+    case 'volumetric': return buildVolumetricScene();
+    case 'parallax': return buildParallaxScene();
+    case 'particle': return buildParticleScene();
+    case 'ao': return buildAOScene();
+    case 'glitch': return buildGlitchScene();
+    case 'liquidglass': return buildLiquidGlassScene();
+    case 'liquidmetal': return buildLiquidMetalScene();
+  }
+}
+
+function addExtra(obj) { scene.add(obj); extraObjects.push(obj); }
+
+// --- Glassmorphism ---
+function buildGlassScene() {
+  [0xff4466,0x44ff88,0x4488ff,0xffaa22,0xcc44ff].forEach((c,i) => {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(.35,32,32),
+      new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.3}));
+    m.position.set(Math.sin(i*1.3)*1.5, Math.cos(i*1.7)*1, -1.5+Math.sin(i)*.5);
+    addExtra(m);
+  });
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(2.5,2.5),
+    new THREE.MeshPhysicalMaterial({color:0xffffff,transmission:1,roughness:.18,thickness:.5,ior:1.5,side:THREE.DoubleSide}));
+  g.position.z = .5; addExtra(g);
+}
+
+// --- Caustics ---
+function buildCausticsScene() {
+  camera.position.set(0,3,4);
+  const mat = new THREE.ShaderMaterial({
+    uniforms:{uTime:{value:0}},
+    vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform float uTime;varying vec2 vUv;
+      float caustic(vec2 p,float t){float v=0.;for(int i=0;i<3;i++){float fi=float(i);vec2 q=p*(.8+fi*.3)+vec2(sin(t*.3+fi*.7),cos(t*.4+fi*.5))*.5;v+=abs(sin(q.x*6.+t+fi)*cos(q.y*6.+t*1.1+fi));}return v/3.;}
+      void main(){vec2 p=vUv*2.-1.;float c=pow(caustic(p,uTime),1.5)*1.2;vec3 col=mix(vec3(0,.02,.06),vec3(.1,.5,.9),c)+vec3(.1,.8,.6)*pow(c,3.);gl_FragColor=vec4(col,1.);}`
+  });
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(6,6),mat);
+  plane.rotation.x=-Math.PI/2; addExtra(plane);
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(6,6),
+    new THREE.MeshPhysicalMaterial({color:0x0088cc,transmission:.8,roughness:.1,thickness:.3,side:THREE.DoubleSide,opacity:.4,transparent:true}));
+  water.rotation.x=-Math.PI/2; water.position.y=1.8; addExtra(water);
+}
+
+// --- Chromatic Aberration ---
+function buildChromaticScene() {
+  const mat = new THREE.ShaderMaterial({
+    uniforms:{uTime:{value:0}},
+    vertexShader:`varying vec3 vN;varying vec3 vP;varying vec2 vUv;void main(){vN=normalize(normalMatrix*normal);vP=(modelViewMatrix*vec4(position,1.)).xyz;vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform float uTime;varying vec3 vN;varying vec3 vP;varying vec2 vUv;
+      void main(){vec3 vd=normalize(-vP);float f=1.-abs(dot(vd,vN));float o=f*.06+sin(uTime*2.)*.01;
+      float r=smoothstep(.3,.7,fract(vUv.x*8.+o*10.));float g=smoothstep(.3,.7,fract(vUv.x*8.));float b=smoothstep(.3,.7,fract(vUv.x*8.-o*10.));
+      vec3 c=vec3(.15,.15,.2)+vec3(r*.3,g*.1,b*.4)*f;c+=vec3(1.,.3,.3)*pow(f,3.)*o*8.+vec3(.3,.3,1.)*pow(f,3.)*o*8.;gl_FragColor=vec4(c+.05,1.);}`
+  });
+  const m = new THREE.Mesh(new THREE.TorusKnotGeometry(1,.35,128,32),mat); addExtra(m);
+}
+
+// --- Voronoi ---
+function buildVoronoiScene() {
+  const mat = new THREE.ShaderMaterial({
+    uniforms:{uTime:{value:0}},
+    vertexShader:`varying vec2 vUv;varying vec3 vN;varying vec3 vP;void main(){vUv=uv;vN=normalize(normalMatrix*normal);vP=(modelViewMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform float uTime;varying vec2 vUv;varying vec3 vN;varying vec3 vP;
+      vec2 hash(vec2 p){return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);}
+      void main(){vec2 uv=vUv*6.;vec2 ip=floor(uv),fp=fract(uv);float md=2.,md2=2.;
+      for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++){vec2 n=vec2(float(x),float(y));vec2 p=hash(ip+n)+sin(uTime*.4+hash(ip+n)*6.28)*.3;float d=length(n+p-fp);if(d<md){md2=md;md=d;}else if(d<md2){md2=d;}}
+      float edge=1.-smoothstep(0.,.06,md2-md);float f=1.-abs(dot(normalize(-vP),vN));
+      vec3 col=mix(vec3(.04,.04,.06)+vec3(0,.02,.04)*md*2.,mix(vec3(0,.6,1.),vec3(.5,.2,1.),f)*1.5,edge)+vec3(0,.4,.8)*pow(f,3.)*.4;
+      gl_FragColor=vec4(col,1.);}`
+  });
+  const m = new THREE.Mesh(new THREE.SphereGeometry(1.5,64,64),mat); addExtra(m);
+}
+
+// --- Soft Body ---
+function buildSoftBodyScene() {
+  camera.position.set(0,2,4);
+  const geo = new THREE.PlaneGeometry(4,4,80,80);
+  const mat = new THREE.MeshStandardMaterial({color:0x8844cc,roughness:.4,metalness:.2,side:THREE.DoubleSide,flatShading:true});
+  const m = new THREE.Mesh(geo,mat);
+  m.rotation.x = -Math.PI*.4;
+  m.userData.isCloth = true;
+  m.userData.origPositions = Float32Array.from(geo.attributes.position.array);
+  addExtra(m);
+}
+
+// --- Volumetric ---
+function buildVolumetricScene() {
+  camera.position.set(0,1,5);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(8,8),new THREE.MeshStandardMaterial({color:0x222222,roughness:.8}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-1.5; addExtra(floor);
+  for(let i=0;i<5;i++){
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(.4+Math.random()*.3,4,32,1,true),
+      new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
+        uniforms:{uColor:{value:new THREE.Color().setHSL(.12+i*.02,.8,.6)}},
+        vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+        fragmentShader:`uniform vec3 uColor;varying vec2 vUv;void main(){float a=smoothstep(0.,.3,vUv.y)*smoothstep(1.,.5,vUv.y)*smoothstep(0.,.4,1.-abs(vUv.x-.5)*2.)*.35;gl_FragColor=vec4(uColor,a);}`}));
+    cone.position.set(-2+i*1,.5,-1+Math.sin(i)*.5); cone.rotation.z=(Math.random()-.5)*.15; addExtra(cone);
+  }
+  const dGeo = new THREE.BufferGeometry(); const dP = new Float32Array(300*3);
+  for(let i=0;i<300;i++){dP[i*3]=(Math.random()-.5)*6;dP[i*3+1]=Math.random()*3-1;dP[i*3+2]=(Math.random()-.5)*4;}
+  dGeo.setAttribute('position',new THREE.BufferAttribute(dP,3));
+  const dust = new THREE.Points(dGeo,new THREE.PointsMaterial({size:.02,color:0xffcc66,transparent:true,opacity:.6,blending:THREE.AdditiveBlending,depthWrite:false}));
+  dust.userData.isDust=true; addExtra(dust);
+}
+
+// --- Parallax ---
+function buildParallaxScene() {
+  camera.position.set(0,1.5,3);
+  const sz=256,c=document.createElement('canvas');c.width=c.height=sz;const ctx=c.getContext('2d');
+  for(let y=0;y<sz;y++)for(let x=0;x<sz;x++){
+    const cx2=x/sz-.5,cy2=y/sz-.5,d=Math.sqrt(cx2*cx2+cy2*cy2);
+    const v=Math.sin(d*30)*.5+.5,v2=Math.sin(x*.15)*Math.cos(y*.15)*.3+.5;
+    const val=Math.floor((v*.6+v2*.4)*255);ctx.fillStyle=`rgb(${val},${val},${val})`;ctx.fillRect(x,y,1,1);
+  }
+  const dispMap=new THREE.CanvasTexture(c);
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(3,3,200,200),
+    new THREE.MeshStandardMaterial({color:0xaaaacc,roughness:.5,metalness:.3,displacementMap:dispMap,displacementScale:.7,displacementBias:-.35,side:THREE.DoubleSide}));
+  m.rotation.x=-Math.PI*.35; addExtra(m);
+}
+
+// --- Particle Morphing ---
+function buildParticleScene() {
+  const srcGeo=new THREE.TorusKnotGeometry(1,.35,200,32);const srcPos=srcGeo.attributes.position.array;const count=srcPos.length/3;
+  const startPos=new Float32Array(count*3),targetPos=new Float32Array(srcPos);
+  for(let i=0;i<count;i++){startPos[i*3]=(Math.random()-.5)*6;startPos[i*3+1]=(Math.random()-.5)*6;startPos[i*3+2]=(Math.random()-.5)*6;}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(count*3),3));
+  geo.userData={startPos,targetPos,count};
+  const pts=new THREE.Points(geo,new THREE.PointsMaterial({size:.025,color:0x00d4ff,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false}));
+  pts.userData.isParticle=true; addExtra(pts); srcGeo.dispose();
+}
+
+// --- AO ---
+function buildAOScene() {
+  camera.position.set(3,3,4);
+  const mat=new THREE.MeshStandardMaterial({color:0xdddddd,roughness:.85,metalness:0});
+  for(let x=0;x<4;x++)for(let y=0;y<3;y++)for(let z=0;z<4;z++){
+    if(Math.random()<.35)continue;const s=.4+Math.random()*.2;
+    const box=new THREE.Mesh(new THREE.BoxGeometry(s,s,s),mat);
+    box.position.set(x*.55-.8,y*.55,z*.55-.8); addExtra(box);
+  }
+  const base=new THREE.Mesh(new THREE.BoxGeometry(4,.1,4),mat);base.position.y=-.15;addExtra(base);
+}
+
+// --- Glitch ---
+function buildGlitchScene() {
+  const mat = new THREE.ShaderMaterial({
+    uniforms:{uTime:{value:0}},
+    vertexShader:`varying vec2 vUv;varying vec3 vN;varying vec3 vP;void main(){vUv=uv;vN=normalize(normalMatrix*normal);vP=(modelViewMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+    fragmentShader:`uniform float uTime;varying vec2 vUv;varying vec3 vN;varying vec3 vP;
+      float rand(float n){return fract(sin(n)*43758.5453);}
+      void main(){vec2 uv=vUv;float line=floor(uv.y*40.);float gt=step(.92,rand(line+floor(uTime*8.)));uv.x+=gt*(rand(line+uTime)-.5)*.3;
+      float scan=mix(1.,.85,sin(uv.y*300.+uTime*10.)*.5+.5);float off=.015+gt*.04;float f=1.-abs(dot(normalize(-vP),vN));
+      vec3 col;col.r=smoothstep(.4,.6,fract((uv.x+off)*5.))*.8+.2;col.g=smoothstep(.4,.6,fract(uv.x*5.))*.6+.2;col.b=smoothstep(.4,.6,fract((uv.x-off)*5.))*.9+.2;
+      col*=scan;col+=vec3(0,.3,.5)*pow(f,2.)*.5;col=mix(col,vec3(rand(uv.y+uTime)),gt*.4);gl_FragColor=vec4(col,1.);}`
+  });
+  const m=new THREE.Mesh(new THREE.TorusKnotGeometry(1,.35,128,32),mat); addExtra(m);
+}
+
+// --- Liquid Glass ---
+function buildLiquidGlassScene() {
+  const geo=new THREE.IcosahedronGeometry(1.3,5);
+  const mat=new THREE.MeshPhysicalMaterial({color:0xffffff,transmission:1,roughness:.02,ior:2.4,thickness:3,envMapIntensity:1.2,
+    specularIntensity:1,specularColor:new THREE.Color(0xffffff),attenuationColor:new THREE.Color(0xccddff),attenuationDistance:2.5,dispersion:.8,clearcoat:.3});
+  const m=new THREE.Mesh(geo,mat);
+  m.userData.isLiquidMorph=true; m.userData.origPositions=Float32Array.from(geo.attributes.position.array);
+  addExtra(m);
+  [0xff3366,0x33ff99,0x3366ff,0xffcc00,0xff66cc].forEach((c,i)=>{
+    const s=new THREE.Mesh(new THREE.SphereGeometry(.18,16,16),new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.5}));
+    const a=(i/5)*Math.PI*2;s.position.set(Math.cos(a)*2.5,Math.sin(a)*2.5,-2);addExtra(s);
+  });
+}
+
+// --- Liquid Metal ---
+function buildLiquidMetalScene() {
+  const geo=new THREE.IcosahedronGeometry(1.2,6);
+  const mat=new THREE.MeshPhysicalMaterial({color:0xcccccc,metalness:1,roughness:0,envMapIntensity:2.5,clearcoat:.8,clearcoatRoughness:.05});
+  const m=new THREE.Mesh(geo,mat);
+  m.userData.isLiquidMorph=true; m.userData.origPositions=Float32Array.from(geo.attributes.position.array);
+  addExtra(m);
+}
+
+/* ============================================================
    五、Prompt 渲染与复制
    ============================================================ */
 const COPY_ICON = `<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`;
@@ -674,10 +1001,30 @@ function selectItem(idx) {
 }
 
 function switchScene(id) {
-  // 清理旧材质
+  // 清理旧材质和额外场景对象
   if (currentMaterial && currentMaterial.dispose) currentMaterial.dispose();
+  clearExtras();
 
-  // Metaball 模式切换
+  // 重置相机
+  camera.position.set(0, 0, 5);
+  controls.target.set(0, 0, 0);
+
+  // Vol.2 多场景模式
+  if (VOL2_IDS.includes(id)) {
+    isMetaballMode = false;
+    torusMesh.visible = false;
+    if (metaballGroup && metaballGroup.parent) scene.remove(metaballGroup);
+    bloomPass.enabled = false;
+    renderer.toneMappingExposure = 1.2;
+    buildVol2Scene(id);
+    controls.update();
+    return;
+  }
+
+  // Vol.1 原始模式 — TorusKnot 材质切换
+  torusMesh.visible = true;
+
+  // Metaball 模式
   if (id === 'metaball') {
     isMetaballMode = true;
     torusMesh.visible = false;
@@ -687,7 +1034,6 @@ function switchScene(id) {
     return;
   } else {
     isMetaballMode = false;
-    torusMesh.visible = true;
     if (metaballGroup && metaballGroup.parent) scene.remove(metaballGroup);
   }
 
@@ -753,6 +1099,63 @@ function animate() {
   // Anisotropy 旋转动画
   if (currentMaterial && currentMaterial.anisotropy !== undefined && currentMaterial.anisotropy > 0) {
     currentMaterial.anisotropyRotation = elapsed * 0.3;
+  }
+
+  // Vol.2 扩展对象动画
+  extraObjects.forEach(obj => {
+    // Shader 时间
+    if (obj.material && obj.material.uniforms && obj.material.uniforms.uTime) {
+      obj.material.uniforms.uTime.value = elapsed;
+    }
+    // 布料波浪
+    if (obj.userData.isCloth) {
+      const pos = obj.geometry.attributes.position;
+      const orig = obj.userData.origPositions;
+      for (let i = 0; i < pos.count; i++) {
+        const ox = orig[i*3], oy = orig[i*3+1];
+        pos.array[i*3+2] = Math.sin(ox*2+elapsed*1.5)*Math.cos(oy*2+elapsed*1.2)*.25+Math.sin(ox*4+elapsed*.8)*.08;
+      }
+      pos.needsUpdate = true; obj.geometry.computeVertexNormals();
+    }
+    // 粒子变形
+    if (obj.userData.isParticle) {
+      const geo = obj.geometry;
+      const {startPos, targetPos, count} = geo.userData;
+      const pos = geo.attributes.position.array;
+      const progress = Math.sin(elapsed*.5)*.5+.5;
+      for (let i = 0; i < count*3; i++) pos[i] = startPos[i]+(targetPos[i]-startPos[i])*progress;
+      geo.attributes.position.needsUpdate = true;
+    }
+    // 尘埃漂浮
+    if (obj.userData.isDust) {
+      const pos = obj.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) { pos.array[i*3+1] += .002; if (pos.array[i*3+1] > 2) pos.array[i*3+1] = -1; }
+      pos.needsUpdate = true;
+    }
+    // 液态变形
+    if (obj.userData.isLiquidMorph) {
+      const pos = obj.geometry.attributes.position;
+      const orig = obj.userData.origPositions;
+      for (let i = 0; i < pos.count; i++) {
+        const ox=orig[i*3],oy=orig[i*3+1],oz=orig[i*3+2];
+        const len=Math.sqrt(ox*ox+oy*oy+oz*oz);const nx=ox/len,ny=oy/len,nz=oz/len;
+        const n1=Math.sin(nx*3+elapsed*.8)*Math.cos(ny*4+elapsed*.6)*Math.sin(nz*3.5+elapsed*.7)*.12;
+        const n2=Math.sin(nx*7+elapsed*1.3)*Math.cos(nz*5+elapsed*1.1)*.05;
+        const n3=Math.sin(ny*9+elapsed*2)*.02;
+        const disp=n1+n2+n3;
+        pos.array[i*3]=ox+nx*disp;pos.array[i*3+1]=oy+ny*disp;pos.array[i*3+2]=oz+nz*disp;
+      }
+      pos.needsUpdate = true; obj.geometry.computeVertexNormals();
+      obj.rotation.y = elapsed * 0.12;
+    }
+  });
+
+  // Vol.2 默认旋转（非特殊对象的最后一个 mesh）
+  if (extraObjects.length > 0) {
+    const last = extraObjects[extraObjects.length - 1];
+    if (last.isMesh && !last.userData.isCloth && !last.userData.isLiquidMorph) {
+      last.rotation.y = elapsed * 0.15;
+    }
   }
 
   // 渲染
